@@ -16,7 +16,7 @@ wall = {}
 mv = {{-1,0},{1,0},{0,-1},{0,1}}
 d = 1
 
-function col_rect(x1,y1,h1,w1,x2,y2,h2,w2)
+function col_rect(x1,y1,w1,h1,x2,y2,w2,h2)
    if ((x1 < x2 + w2) and (x1 + w1 > x2) and (y1 < y2 + h2) and (y1 + h1 > y2)) then return true end
    return false
 end
@@ -48,10 +48,10 @@ end
 
 function makewall()
    wall = {}
-   add(wall,{x=0,y=0,w=127,h=1})
-   add(wall,{x=0,y=0,w=1,h=127})
-   --add(wall,{x=125,y=0,w=1,h=128})
-   add(wall,{x=0,y=125,w=128,h=1})
+   add(wall,{x=0,y=0,w=1,h=126})
+   add(wall,{x=0,y=0,w=126,h=1})
+   add(wall,{x=125,y=0,w=1,h=126})
+   add(wall,{x=0,y=125,w=126,h=1})
 end
 
 
@@ -88,6 +88,12 @@ function _update()
       return
    end
  end
+ for i = 1,#snake-1 do
+   if (col_rect(snake[i].x,snake[i].y,3,3,snake[#snake].x,snake[#snake].y,3,3)) then
+      _init()
+      return
+   end
+ end
 end
 
 function _draw()
@@ -99,9 +105,6 @@ function _draw()
    rectfill(wall[i].x,wall[i].y,wall[i].x+wall[i].w,wall[i].y+wall[i].h,2)
  end
  rectfill(fruit.x,fruit.y,fruit.x+2,fruit.y+2,5)
- 
- print(fruit.x.." "..fruit.y)
- print(snake[#snake].x.." "..snake[#snake].y)
 end
 
 
