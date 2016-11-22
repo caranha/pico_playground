@@ -1,36 +1,49 @@
 pico-8 cartridge // http://www.pico-8.com
-version 7
+version 8
 __lua__
 -- snake
 -- by caranha (http://claus.castelodelego.org)
 
 snake = {}
-snakelen = 5
-snakespd = 2
-snaketo = 0
-
 fruit = {}
 wall = {}
+fx = {}
+
+snakelen = 5
+snakespd = 1
+snaketo = 0
+snaked = 1
 
 
 mv = {{-1,0},{1,0},{0,-1},{0,1}}
-d = 1
 
-function col_rect(x1,y1,w1,h1,x2,y2,w2,h2)
-   if ((x1 < x2 + w2) and (x1 + w1 > x2) and (y1 < y2 + h2) and (y1 + h1 > y2)) then return true end
+function col_rect(ob1,ob2)
+   if ((ob1.x < ob2.x+ob2.w) and 
+       (ob1.x + ob1.w > ob2.x) and 
+       (ob1.y < ob2.y + ob2.h) and 
+       (ob1.y + ob1.h > ob2.y)) then return true end
    return false
+end
+
+function breakfruit()
+   for i in all({{1,1},{1,-1},{-1,-1},{-1,1}}) do
+      _fx = {x=fruit.x+1+i[1],y=fruit.y+1+i[2],
+             dx=i[1],dy=i[2],
+             w=1,h=1,color=fruit.color,age=8}
+      add(fx,_fx)
+   end
 end
 
 function makefruit()
    while(true) do
       collide = false
-      fruit.x = flr(rnd(42))*3+2
-      fruit.y = flr(rnd(42))*3+2
+      fruit = {x=flr(rnd(42))*3+2, y=flr(rnd(42))*3+2,
+               w=2,h=2,color=flr(rnd(14))+2}
       for i = 1,#snake do
- 	      collide = collide or col_rect(fruit.x,fruit.y,3,3,snake[i].x,snake[i].y,3,3)
+ 	      collide = collide or col_rect(fruit,snake[i])
       end
       for i = 1,#wall do
- 	      collide = collide or col_rect(fruit.x,fruit.y,3,3,wall[i].x,wall[i].y,wall[i].w,wall[i].h)
+ 	      collide = collide or col_rect(fruit,wall[i])
       end
       if (not collide) return
    end
@@ -38,9 +51,7 @@ end
 
 function makesnake(x,y)
    snake = {}
-   head = {}
-   head.x = x
-   head.y = y
+   head = {x=x,y=y,h=2,w=2,color=1}
    snakelen = 5
    snakespd = 2
    add(snake,head)
@@ -48,22 +59,51 @@ end
 
 function makewall()
    wall = {}
-   add(wall,{x=0,y=0,w=1,h=126})
-   add(wall,{x=0,y=0,w=126,h=1})
-   add(wall,{x=125,y=0,w=1,h=126})
-   add(wall,{x=0,y=125,w=126,h=1})
+   add(wall,{x=0,y=0,w=1,h=126,color=2})
+   add(wall,{x=0,y=0,w=126,h=1,color=2})
+   add(wall,{x=125,y=0,w=1,h=126,color=2})
+   add(wall,{x=0,y=125,w=126,h=1,color=2})
 end
 
-
-function movesnake()
+function snakeupdate()
 	snaketo = (snaketo+1)%snakespd
 	if (snaketo > 0) return
-	np = {}
-   np.x = snake[#snake].x + mv[d][1]*3
-   np.y = snake[#snake].y + mv[d][2]*3
+	np = {x=snake[#snake].x+mv[snaked][1]*3,
+	      y=snake[#snake].y+mv[snaked][2]*3,
+	      h=2,w=2,color=1}
    add(snake,np)
    if (#snake > snakelen) del(snake,snake[1]) 
+   
+   if (col_rect(fruit,snake[#snake])) then
+      snake[#snake].color = 13
+      snakelen = snakelen + 1
+      sfx(0,0,flr(rnd(6))*4)
+      breakfruit()
+      makefruit()
+   end
+   for i = 1,#wall do
+      if (col_rect(wall[i],snake[#snake])) then
+         _init()
+      return
+      end
+   end
+   for i = 1,#snake-1 do
+      if (col_rect(snake[i],snake[#snake])) then
+         _init()
+      return
+      end
+   end
 end
+
+function fxupdate()
+   for i in all(fx) do
+      i.x += i.dx
+      i.y += i.dy
+      i.age -= 1
+      if (i.age == 0) then del(fx,i) end
+   end
+end
+
 
 function _init()
    makesnake(65,65)
@@ -71,40 +111,26 @@ function _init()
    makefruit()
 end
 
-function _update()
+function _update60()
 
  for i=0,3 do
-  if (btn(i)==true and mv[d][1] != mv[i+1][1] and mv[d][2] != mv[i+1][2]) d = i+1 
+  if (btn(i)==true and mv[snaked][1] != mv[i+1][1] and mv[snaked][2] != mv[i+1][2]) snaked = i+1 
  end
 
- movesnake()
- if (col_rect(fruit.x,fruit.y,3,3,snake[#snake].x,snake[#snake].y,3,3)) then
-  snakelen = snakelen + 1
-  makefruit()
- end
- for i = 1,#wall do
-   if (col_rect(wall[i].x,wall[i].y,wall[i].w,wall[i].h,snake[#snake].x,snake[#snake].y,3,3)) then
-      _init()
-      return
-   end
- end
- for i = 1,#snake-1 do
-   if (col_rect(snake[i].x,snake[i].y,3,3,snake[#snake].x,snake[#snake].y,3,3)) then
-      _init()
-      return
-   end
- end
+ snakeupdate()
+ fxupdate() 
+end
+
+function drawsquare(sq)
+   rectfill(sq.x,sq.y,sq.x+sq.w,sq.y+sq.h,sq.color)
 end
 
 function _draw()
  cls()
- for i = 1,#snake do
- 	rectfill(snake[i].x,snake[i].y,snake[i].x+2,snake[i].y+2,1)
- end
- for i = 1,#wall do
-   rectfill(wall[i].x,wall[i].y,wall[i].x+wall[i].w,wall[i].y+wall[i].h,2)
- end
- rectfill(fruit.x,fruit.y,fruit.x+2,fruit.y+2,5)
+ foreach(snake,drawsquare)
+ foreach(wall,drawsquare)
+ drawsquare(fruit)
+ foreach(fx,drawsquare)
 end
 
 
@@ -274,7 +300,7 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0001000000500005000050000500005000050000500005001d5001d500095000800028050280502805009500180001d5003050031500005002f05035000330503600038050005000050000500005000050000500
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
