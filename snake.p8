@@ -10,12 +10,22 @@ wall = {}
 fx = {}
 
 snakelen = 5
-snakespd = 1
+snakespd = 2
 snaketo = 0
 snaked = 1
 
+screenshake = 0
+gamearea = {x=0,y=0,w=127,h=117}
+
 
 mv = {{-1,0},{1,0},{0,-1},{0,1}}
+
+function scshake()
+    if screenshake > 0 then
+        camera(rnd(screenshake)-screenshake/2,rnd(screenshake)-screenshake/2)
+        screenshake -= 1
+    end
+end
 
 function col_rect(ob1,ob2)
    if ((ob1.x < ob2.x+ob2.w) and 
@@ -39,6 +49,7 @@ function makefruit()
       collide = false
       fruit = {x=flr(rnd(42))*3+2, y=flr(rnd(42))*3+2,
                w=2,h=2,color=flr(rnd(14))+2}
+      collide = not col_rect(fruit,gamearea)
       for i = 1,#snake do
  	      collide = collide or col_rect(fruit,snake[i])
       end
@@ -53,24 +64,28 @@ function makesnake(x,y)
    snake = {}
    head = {x=x,y=y,h=2,w=2,color=1}
    snakelen = 5
-   snakespd = 2
+   snakespd = 4
    add(snake,head)
 end
 
 function makewall()
    wall = {}
-   add(wall,{x=0,y=0,w=1,h=126,color=2})
-   add(wall,{x=0,y=0,w=126,h=1,color=2})
-   add(wall,{x=125,y=0,w=1,h=126,color=2})
-   add(wall,{x=0,y=125,w=126,h=1,color=2})
+   add(wall,{x=gamearea.x,y=gamearea.y,
+             w=1,h=gamearea.h+gamearea.y-1,color=2})
+   add(wall,{x=gamearea.x,y=gamearea.y,
+             w=gamearea.w+gamearea.x - 1,h=1,color=2})
+   add(wall,{x=gamearea.w+gamearea.x - 2,y=gamearea.y,
+             w=1,h=gamearea.h+gamearea.y - 1,color=2})
+   add(wall,{x=gamearea.x,y=gamearea.h+gamearea.y - 2,
+             w=gamearea.w+gamearea.x - 1,h=1,color=2})
 end
 
 function snakeupdate()
-	snaketo = (snaketo+1)%snakespd
-	if (snaketo > 0) return
-	np = {x=snake[#snake].x+mv[snaked][1]*3,
-	      y=snake[#snake].y+mv[snaked][2]*3,
-	      h=2,w=2,color=1}
+   snaketo = (snaketo+1)%snakespd
+   if (snaketo > 0) return
+   np = {x=snake[#snake].x+mv[snaked][1]*3,
+         y=snake[#snake].y+mv[snaked][2]*3,
+         h=2,w=2,color=1}
    add(snake,np)
    if (#snake > snakelen) del(snake,snake[1]) 
    
@@ -84,12 +99,14 @@ function snakeupdate()
    for i = 1,#wall do
       if (col_rect(wall[i],snake[#snake])) then
          _init()
+         screenshake = 7
       return
       end
    end
    for i = 1,#snake-1 do
       if (col_rect(snake[i],snake[#snake])) then
          _init()
+         screenshake = 7
       return
       end
    end
@@ -109,6 +126,7 @@ function _init()
    makesnake(65,65)
    makewall()
    makefruit()
+   _snakeupdate = snakeupdate
 end
 
 function _update60()
@@ -117,7 +135,7 @@ function _update60()
   if (btn(i)==true and mv[snaked][1] != mv[i+1][1] and mv[snaked][2] != mv[i+1][2]) snaked = i+1 
  end
 
- snakeupdate()
+ _snakeupdate()
  fxupdate() 
 end
 
@@ -127,6 +145,8 @@ end
 
 function _draw()
  cls()
+ camera()
+ scshake()
  foreach(snake,drawsquare)
  foreach(wall,drawsquare)
  drawsquare(fruit)
