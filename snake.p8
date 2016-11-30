@@ -15,8 +15,8 @@ snaketo = 0
 snaked = 1
 
 screenshake = 0
-gamearea = {x=0,y=0,w=127,h=117}
-
+gamearea = {x=0,y=6,w=127,h=121}
+score = 0
 
 mv = {{-1,0},{1,0},{0,-1},{0,1}}
 
@@ -48,7 +48,8 @@ function makefruit()
    while(true) do
       collide = false
       fruit = {x=flr(rnd(42))*3+2, y=flr(rnd(42))*3+2,
-               w=2,h=2,color=flr(rnd(14))+2}
+               w=2,h=2,color=flr(rnd(14))+2,
+               score = 10}
       collide = not col_rect(fruit,gamearea)
       for i = 1,#snake do
  	      collide = collide or col_rect(fruit,snake[i])
@@ -92,6 +93,7 @@ function snakeupdate()
    if (col_rect(fruit,snake[#snake])) then
       snake[#snake].color = 13
       snakelen = snakelen + 1
+      score += fruit.score
       sfx(0,0,flr(rnd(6))*4)
       breakfruit()
       makefruit()
@@ -126,6 +128,7 @@ function _init()
    makesnake(65,65)
    makewall()
    makefruit()
+   score = 0
    _snakeupdate = snakeupdate
 end
 
@@ -151,6 +154,13 @@ function _draw()
  foreach(wall,drawsquare)
  drawsquare(fruit)
  foreach(fx,drawsquare)
+
+ print("score: ")
+ print(flr(score/10000)%10,30,0,6)
+ print(flr(score/1000)%10,34,0,6)
+ print(flr(score/100)%10,38,0,6)
+ print(flr(score/10)%10,42,0,6)
+ print(score%10,46,0,6)
 end
 
 
