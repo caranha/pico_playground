@@ -140,7 +140,7 @@ function drawzombie(z)
 end
 
 function _draw()
-	cls()
+	cls(15)
 	--spr(18,50,50)
 	
 	foreach(plants,drawplant)
