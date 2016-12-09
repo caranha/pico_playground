@@ -16,7 +16,9 @@ snaked = 1
 
 screenshake = 0
 gamearea = {x=0,y=6,w=127,h=121}
-score = 0
+
+rscore = 0
+dscore = 0
 
 mv = {{-1,0},{1,0},{0,-1},{0,1}}
 
@@ -28,111 +30,111 @@ function scshake()
 end
 
 function col_rect(ob1,ob2)
-   if ((ob1.x < ob2.x+ob2.w) and 
-       (ob1.x + ob1.w > ob2.x) and 
-       (ob1.y < ob2.y + ob2.h) and 
-       (ob1.y + ob1.h > ob2.y)) then return true end
-   return false
+	if ((ob1.x < ob2.x+ob2.w) and 
+     (ob1.x + ob1.w > ob2.x) and 
+     (ob1.y < ob2.y + ob2.h) and 
+     (ob1.y + ob1.h > ob2.y)) then return true end
+ return false
 end
 
 function breakfruit()
-   for i in all({{1,1},{1,-1},{-1,-1},{-1,1}}) do
-      _fx = {x=fruit.x+1+i[1],y=fruit.y+1+i[2],
-             dx=i[1],dy=i[2],
-             w=1,h=1,color=fruit.color,age=8}
-      add(fx,_fx)
-   end
+ for i in all({{1,1},{1,-1},{-1,-1},{-1,1}}) do
+  _fx = {x=fruit.x+1+i[1],y=fruit.y+1+i[2],
+         dx=i[1],dy=i[2],
+         w=1,h=1,color=fruit.color,age=8}
+  add(fx,_fx)
+ end
 end
 
 function makefruit()
-   while(true) do
-      collide = false
-      fruit = {x=flr(rnd(42))*3+2, y=flr(rnd(42))*3+2,
-               w=2,h=2,color=flr(rnd(14))+2,
-               score = 10}
-      collide = not col_rect(fruit,gamearea)
-      for i = 1,#snake do
- 	      collide = collide or col_rect(fruit,snake[i])
-      end
-      for i = 1,#wall do
- 	      collide = collide or col_rect(fruit,wall[i])
-      end
-      if (not collide) return
-   end
+ while(true) do
+  collide = false
+  fruit = {x=flr(rnd(42))*3+2, y=flr(rnd(42))*3+2,
+           w=2,h=2,color=flr(rnd(14))+2,
+           score = 10}
+  collide = not col_rect(fruit,gamearea)
+  for i = 1,#snake do
+   collide = collide or col_rect(fruit,snake[i])
+  end
+  for i = 1,#wall do
+   collide = collide or col_rect(fruit,wall[i])
+  end
+  if (not collide) return
+ end
 end
 
 function makesnake(x,y)
-   snake = {}
-   head = {x=x,y=y,h=2,w=2,color=1}
-   snakelen = 5
-   snakespd = 4
-   add(snake,head)
+ snake = {}
+ head = {x=x,y=y,h=2,w=2,color=1}
+ snakelen = 5
+	snakespd = 4
+	add(snake,head)
 end
 
 function makewall()
-   wall = {}
-   add(wall,{x=gamearea.x,y=gamearea.y,
-             w=1,h=gamearea.h+gamearea.y-1,color=2})
-   add(wall,{x=gamearea.x,y=gamearea.y,
-             w=gamearea.w+gamearea.x - 1,h=1,color=2})
-   add(wall,{x=gamearea.w+gamearea.x - 2,y=gamearea.y,
-             w=1,h=gamearea.h+gamearea.y - 1,color=2})
-   add(wall,{x=gamearea.x,y=gamearea.h+gamearea.y - 2,
-             w=gamearea.w+gamearea.x - 1,h=1,color=2})
+ wall = {}
+ add(wall,{x=gamearea.x,y=gamearea.y,
+           w=1,h=gamearea.h+gamearea.y-1,color=2})
+ add(wall,{x=gamearea.x,y=gamearea.y,
+           w=gamearea.w+gamearea.x - 1,h=1,color=2})
+ add(wall,{x=gamearea.w+gamearea.x - 2,y=gamearea.y,
+           w=1,h=gamearea.h+gamearea.y - 1,color=2})
+ add(wall,{x=gamearea.x,y=gamearea.h+gamearea.y - 2,
+           w=gamearea.w+gamearea.x - 1,h=1,color=2})
 end
 
 function snakeupdate()
-   snaketo = (snaketo+1)%snakespd
-   if (snaketo > 0) return
-   np = {x=snake[#snake].x+mv[snaked][1]*3,
-         y=snake[#snake].y+mv[snaked][2]*3,
-         h=2,w=2,color=1}
-   add(snake,np)
-   if (#snake > snakelen) del(snake,snake[1]) 
+ snaketo = (snaketo+1)%snakespd
+ if (snaketo > 0) return
+ np = {x=snake[#snake].x+mv[snaked][1]*3,
+       y=snake[#snake].y+mv[snaked][2]*3,
+       h=2,w=2,color=1}
+ add(snake,np)
+ if (#snake > snakelen) del(snake,snake[1]) 
    
-   if (col_rect(fruit,snake[#snake])) then
-      snake[#snake].color = 13
-      snakelen = snakelen + 1
-      score += fruit.score
-      if (score%100 == 0) then snakespd -= 1 end
-      sfx(0,0,flr(rnd(6))*4)
-      breakfruit()
-      makefruit()
-   end
-   for i = 1,#wall do
-      if (col_rect(wall[i],snake[#snake])) then
-         _init()
-         screenshake = 7
-         sfx(1,0,0)
-      return
-      end
-   end
-   for i = 1,#snake-1 do
-      if (col_rect(snake[i],snake[#snake])) then
-         _init()
-         screenshake = 7
-         sfx(1,0,0)
-      return
-      end
-   end
+ if (col_rect(fruit,snake[#snake])) then
+  snake[#snake].color = 13
+  snakelen = snakelen + 1
+  rscore += fruit.score
+  if (rscore%100 == 0) then snakespd -= 1 end
+  sfx(0,0,flr(rnd(6))*4)
+  breakfruit()
+  makefruit()
+ end
+ for i = 1,#wall do
+  if (col_rect(wall[i],snake[#snake])) then
+   _init()
+   screenshake = 7
+   sfx(1,0,0)
+   return
+  end
+ end
+ for i = 1,#snake-1 do
+  if (col_rect(snake[i],snake[#snake])) then
+   _init()
+   screenshake = 7
+   sfx(1,0,0)
+   return
+  end
+ end
 end
 
 function fxupdate()
-   for i in all(fx) do
-      i.x += i.dx
-      i.y += i.dy
-      i.age -= 1
-      if (i.age == 0) then del(fx,i) end
-   end
+ for i in all(fx) do
+  i.x += i.dx
+  i.y += i.dy
+  i.age -= 1
+  if (i.age == 0) then del(fx,i) end
+ end
 end
 
 
 function _init()
-   makesnake(65,65)
-   makewall()
-   makefruit()
-   score = 0
-   _snakeupdate = snakeupdate
+ makesnake(65,65)
+ makewall()
+ makefruit()
+ rscore = 0
+ _snakeupdate = snakeupdate
 end
 
 function _update60()
@@ -141,12 +143,14 @@ function _update60()
   if (btn(i)==true and mv[snaked][1] != mv[i+1][1] and mv[snaked][2] != mv[i+1][2]) snaked = i+1 
  end
 
+	if (dscore > rscore) dscore -=1
+	if (dscore < rscore) dscore +=1
  _snakeupdate()
  fxupdate() 
 end
 
 function drawsquare(sq)
-   rectfill(sq.x,sq.y,sq.x+sq.w,sq.y+sq.h,sq.color)
+ rectfill(sq.x,sq.y,sq.x+sq.w,sq.y+sq.h,sq.color)
 end
 
 function _draw()
@@ -160,14 +164,12 @@ function _draw()
 
  print("score: ")
  print("snake!",104,0)
- print(flr(score/10000)%10,30,0,6)
- print(flr(score/1000)%10,34,0,6)
- print(flr(score/100)%10,38,0,6)
- print(flr(score/10)%10,42,0,6)
- print(score%10,46,0,6)
+ print(flr(dscore/10000)%10,30,0,6)
+ print(flr(dscore/1000)%10,34,0,6)
+ print(flr(dscore/100)%10,38,0,6)
+ print(flr(dscore/10)%10,42,0,6)
+ print(dscore%10,46,0,6)
 end
-
-
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -297,6 +299,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -334,8 +337,8 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-0001000000500005000050000500005000050000500005001d5001d500095000800028050280502805009500180001d5003050031500005002f05035000330503600038050005000050000500005000050000500
-000a000036650256101b630266403565015600346003660006600316001460031600026002b7002a7002970002700027000370003700027000270002700027000370000700007001470000700007000070018700
+000100002805028050280500800028000280002800009500005002f05035000330503600038050005000050036000380000050000500360003805000500005003600038000005000050000500005000050000500
+0008000036650256101b630266403565015600346003660006600316001460031600026002b7002a7002970002700027000370003700027000270002700027000370000700007001470000700007000070018700
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
