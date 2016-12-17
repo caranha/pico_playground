@@ -2,19 +2,25 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 -- window management test
--- 193 tokens (can it be made better?)
+-- 176 tokens
 
-window = {
-	open = false,
-	age = 0,
-	mage = 15,
-	x0 = 10,
-	y0 = 10,
-	x1 = 100,
-	y1 = 100,
-	c1 = 3,
-	c2 = 10
-}
+window = {}
+
+------------------------------
+function new_window(x0,y0,x1,y1,c1,c2,mage)
+	local w = {
+		open = false,
+		age = 0,
+		mage = mage,
+		x0 = x0,
+		y0 = y0,
+		x1 = x1,
+		y1 = y1,
+		c1 = c1,
+		c2 = c2
+	}
+	return w
+end
 
 function w_draw(w)
 	if (w.age == 0 and not w.open) return
@@ -34,26 +40,36 @@ function w_updt(w)
 end
 
 function w_toggle(w)
+	if (w.age != 0) return
 	if (w.open) then
 		w.age = -1*w.mage
 	else
 		w.age = w.mage
 	end	
 end
-
+-----------------------------
 function _init()
+	add(window,new_window(10,50,60,60,3,7,10))
+ add(window,new_window(60,30,100,60,5,5,30))
+	add(window,new_window(10,90,120,110,8,4,60))
+	add(window,new_window(0,0,127,127,15,14,60))
 end
 
 function _update()
-	if (btn(0)) w_toggle(window)
-	w_updt(window)
+	for i=0,3 do
+		if (btn(i)) w_toggle(window[i+1])
+	end
+	foreach(window,w_updt)
 end
 
 function _draw()
 	cls()
-	w_draw(window)
-	print(window.open)
-	print(window.age)
+	foreach(window,w_draw)
+	color(7)
+	for i in all(window) do
+		print(i.open)
+		print(i.age)
+	end
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
