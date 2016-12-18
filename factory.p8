@@ -10,7 +10,53 @@ __lua__
 dx={-1,1,0,0}
 dy={0,0,-1,1}
 ptclist={}
-version = "v1.1"
+version = "v1.1.1"
+
+--------------------------
+function new_window(x0,y0,x1,y1,c1,c2,c3,mage)
+	local w = {
+		open = false,
+		age = 0,
+		mage = mage,
+		x0 = x0,
+		y0 = y0,
+		x1 = x1,
+		y1 = y1,
+		c1 = c1,
+		c2 = c2,
+		c3 = c3
+	}
+	return w
+end
+
+function w_draw(w)
+	if (w.age == 0 and not w.open) return
+	local ymid = ((w.y1-w.y0)/2)*((w.age%w.mage)/w.mage)
+	local ytop = w.y0 + ymid 
+	local ybot = w.y1 - ymid
+	rect(w.x0+1,ytop+1,w.x1+1,ybot+1,w.c3)
+	rectfill(w.x0,ytop,w.x1,ybot,w.c1)
+	rect(w.x0,ytop,w.x1,ybot,w.c2)
+end
+
+function w_updt(w)
+	local sig = -1*sgn(w.age)
+	if (w.age != 0) then
+		w.age += sig
+		if (w.age == 0) w.open = (sig == -1)
+	end
+end
+
+function w_toggle(w)
+	if (w.age != 0) return
+	if (w.open) then
+		w.age = -1*w.mage
+	else
+		w.age = w.mage
+	end	
+end
+--------------------------
+
 
 function _init()
  smenu = {{s=42,c=0,f=destroy,m="destroy a tile: no refunds!"},
@@ -25,6 +71,14 @@ function _init()
 			 						{s=64,c=40,f=addoven,m="bakes 2 bread per second. (cost 40)"},
 			 						{s=80,c=80,f=addass,m="mixes 1 bread and 1 juice. expensive, but worth it! (cost 80)"}
 			 					}
+
+	winlist = {
+		new_window(15,25,111,53,3,3,1,1), -- menu window 2
+		new_window(9,78,117,102,3,3,1,1), -- menu window 1
+		new_window(4,20,124,107,0,3,1,30) -- end window
+		--new_window(1,2,3,4,5,6,7,8),
+	}
+	
 	cartdata("caranha_ld37")
 	screenshake = 0
 	beltc = 0
@@ -36,20 +90,15 @@ function _init()
 	menustart()
 end
 
-function gamestart()
-	mhelp = "'x' to change selection, 'z' to use it"
-	money = 200
-	mhist = {}
-	timeleft = 7200
-	curx,cury = 8,7
-	scorecounter = 0	
-	select = 0
-	fruit = {}
-end
-
 function menustart()
 	fruit = {}
+	w_toggle(winlist[1])
+	w_toggle(winlist[2])
 	mcounter = 0
+	_update = update_menu
+	_draw = draw_menu
+
+
 	cleanroom()
 	addtree(5,8)
 	addbelt(6,8,2)
@@ -60,6 +109,23 @@ function menustart()
 	addbelt(11,8,2)
 	addoutput(12,8)
 end
+
+function gamestart()
+	mhelp = "'x' to change selection, 'z' to use it"
+	money = 200
+	mhist = {}
+	fruit = {}
+	timeleft = 300 --7200
+
+	curx,cury = 8,7
+	select = 0
+end
+
+function scorestart()
+	w_toggle(winlist[3])
+	scorecounter = 0
+end
+
 
 -------- particle system -----
 function newptc(x,y,c,s,dx,dy,ddx,ddy,ma)
@@ -361,7 +427,7 @@ function update_game()
 	if (timeleft%60==0 and timeleft>=0) add(mhist,money)
 	timeleft -= 1
 	if (timeleft < 0) then 
-		scorecounter = 0
+		scorestart()
 		_update = update_end
 		_draw = draw_end
 		return
@@ -384,6 +450,7 @@ end
 
 function update_menu()
 	mcounter += 1
+	foreach(winlist,w_updt)
 	
 	for i=1,16 do
 		for j=1,13 do
@@ -405,6 +472,8 @@ function update_menu()
 	end
 	
 	if mcounter == -1 then
+		w_toggle(winlist[1])
+		w_toggle(winlist[2])
 		gamestart()
 		_update = update_game
 		_draw = draw_game
@@ -413,6 +482,8 @@ end
 
 function update_end()
 	scorecounter += 1
+	foreach(winlist,w_updt)
+	
 	if scorecounter > 30 and scorecounter < 30+#mhist then
 		sfx(4)
 	end
@@ -421,11 +492,9 @@ function update_end()
 	end
 	
 	if scorecounter > 60 and btn() > 0 then
-	 mcounter = 0
 	 highscore = max(highscore,money)
 	 dset(0,highscore)
-		_update = update_menu
-		_draw = draw_menu
+	 winlist[3].open = false
 		menustart()
 	end
 end
@@ -450,11 +519,12 @@ function draw_bottom()
 end
 
 function drawscore()
-	local low = max(64-scorecounter*1.5,20)
-	local hi = min(64+scorecounter*1.5,107) 
-	rectfill(5,low+1,125,hi+1,1)
-	rectfill(4,low,124,hi,0)
-	rect(4,low,124,hi,3)
+	--local low = max(64-scorecounter*1.5,20)
+	--local hi = min(64+scorecounter*1.5,107) 
+	--rectfill(5,low+1,125,hi+1,1)
+	--rectfill(4,low,124,hi,0)
+	--rect(4,low,124,hi,3)
+	foreach(winlist,w_draw)
 
 	local mscore = max(money,highscore)*1.1
 	local scorey = function(s) return 90-((s/mscore)*53) end	
@@ -506,15 +576,15 @@ function draw_menu()
 	draw_board()
 
 	print(version,127-#version*4,2)
-	
-	rectfill(16,26,112,54,1)
-	rectfill(15,25,111,53,3)
+	foreach(winlist,w_draw)
+	--rectfill(16,26,112,54,1)
+	--rectfill(15,25,111,53,3)
 	spr(100,20,27,12,2)
 	print("a ld37 game by @caranha",19,46,1)
 	print("a ld37 game by @caranha",18,45,6)
 
-	rectfill(10,79,118,103,1)
-	rectfill(9,78,117,102,3)
+	--rectfill(10,79,118,103,1)
+	--rectfill(9,78,117,102,3)
 
 	print("build your factory in 4:00",12,81,1)
 	print("try to earn more than $"..(highscore),12,89,1)
