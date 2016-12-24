@@ -4,17 +4,16 @@ __lua__
 -- pico-factory
 -- a ld37 game by caranha
 -------------------------
+-- v1.3 -- added overwrite
 -- v1.2 -- changed how input works
 -- v1.1 -- added oven and assembler
 -- v1.01 -- initial version
 -------------------------
 -- todo:
--- 1. overwriting tiles
--- 2. rebalancing and new tiles
--- 3. challenge modes
+-- 1. rebalancing and new tiles
+-- 2. music
+-- 3. new game modes
 -- 4. tile variation and improvement
--- 5. music
--- 6. new game modes
 
 
 dx={-1,1,0,0}
@@ -148,6 +147,7 @@ function gamestart()
 	place_mode = true
 	select = 1
 	menuselect = 1
+	overwrite = false
 end
 
 function scorestart()
@@ -235,6 +235,7 @@ function updatecursor()
 	end
 
 	if btnp(5) then 
+		overwrite = false
 		place_mode = not place_mode
 		w_toggle(winlist[4])
 		sfx(1)
@@ -243,15 +244,26 @@ function updatecursor()
 	if btnp(4) then
 		if (place_mode) then
 			sm = menu_items[select]
-			print(sm.m)
-			if (select == 1 or
-			    not(tiles[curx][cury].t))
-			    and sm.c <= money then
-			 sm.f(curx,cury,select-2)
-			 money -= sm.c
-			else
-	  	screenshake = 7
+			if (money < sm.c) then
 				sfx(2)
+				return
+			end
+
+			if (select == 1) then
+				sm.f(curx,cury)
+			else
+				if (tiles[curx][cury].t) then
+					if (overwrite) then
+						destroy(curx,cury)
+					else
+						overwrite = true
+						screenshake = 7
+						sfx(2)
+						return
+					end
+				end
+				sm.f(curx,cury,select-2)
+				money -= sm.c
 			end
 		else
 			if not menu_items[menuselect].f then
@@ -262,6 +274,7 @@ function updatecursor()
 				place_mode = not place_mode
 				w_toggle(winlist[4])
 				sfx(1)
+				overwrite = false
 			end
 		end
 	end	
@@ -679,19 +692,19 @@ end
 
 messages = {
 	"this game was made in 48 hours for ludum dare 37!",
-	"inspired by 'idle factory'",
+	"inspired by 'idle factory'.",
 	"i ‡ pico-8",
 	"can you beat $10.000?",
 	"nerf bread!",
 	"go play pico fox!",
 	"got a highscore? send me a screenshot on twitter!",
-	"publish or perish",
-	"feel free to send me ideas to improve the game",
+	"publish or perish.",
+	"feel free to send me ideas to improve the game.",
  "making music is hard...",
- "for a list of cool pico games: http://clowerweb.com/games/pico/"
+ "for a list of cool pico games: http://clowerweb.com/games/pico/",
+ "balancing is hard...",
+ "you can overwrite tiles by pressing the 'use' button twice."
 }
-
-
 __gfx__
 00000000d6ddd6dd6ddd6dddddd6ddd6dd6ddd6ddd6ddd6dddd6ddd66ddd6dddd6ddd6ddf3333ffff33b3ffff3383fff00000000000000000000000000000000
 000000001711171171117111111711171171117111711171111711177111711117111711333333ff333333ff333333ff00000000000000000000000000000000
