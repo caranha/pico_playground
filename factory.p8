@@ -14,16 +14,15 @@ __lua__
 -- v1.01 -- initial version
 -------------------------
 -- todo:
--- 1. rebalancing and new tiles
--- 2. music
--- 3. new game modes
--- 4. tile variation and improvement
-
+-- 1. music
+-- 2. new game modes
+-- 3. tile variation and improvement
+-- 4. more tiles and more rebalancing
 
 dx={-1,1,0,0}
 dy={0,0,-1,1}
 ptclist={}
-version = "v1.2"
+version = "v1.3"
 
 --------------------------
 function new_window(x0,y0,x1,y1,c1,c2,c3,mage)
@@ -86,13 +85,13 @@ function _init()
 		 						{s=5,c=2,x=1,y=1,f=addbelt,m="conveyor belt ‘ "},
 		 						{s=17,c=2,x=1,y=2,f=addbelt,m="conveyor belt ” "},
 		 						{s=21,c=2,x=1,y=3,f=addbelt,m="conveyor belt ƒ "},
-		 						{s=57,c=20,x=1,y=4,f=addsplit,m="splits the input 3-way "},
+		 						{s=57,c=6,x=1,y=4,f=addsplit,m="splits the input 3-way "},
 		 						{s=9,c=10,x=2,y=0,f=addtree,m="tree: 1 apple/3s "},
-		 						{s=25,c=20,x=3,y=0,f=addprocessor,m="process apples to juice "},
-		 						{s=64,c=40,x=2,y=1,f=addoven,m="bakery: 2 bread/s "},
-		 						{s=80,c=80,x=3,y=1,f=addass,m="bread + juice = breakfast "},
-		 						{s=68,c=20,x=4,y=0,f=addchicken,m="a bit random "},
-		 						{s=84,c=20,x=4,y=1,f=addtoaster,m="egg + bread = delicious "},
+		 						{s=25,c=150,x=3,y=0,f=addprocessor,m="mixer: 4 apples = juice "},
+		 						{s=64,c=100,x=2,y=1,f=addoven,m="bakery: 3 bread/2 s "},
+		 						{s=80,c=500,x=3,y=1,f=addass,m="bread + juice = $$$ "},
+		 						{s=68,c=50,x=4,y=0,f=addchicken,m="a bit random "},
+		 						{s=84,c=300,x=4,y=1,f=addtoaster,m="egg + bread = delicious "},
 		 						{s=44,c=0,x=0,y=2,f=nil,m="not available"},
 		 						{s=44,c=0,x=0,y=3,f=nil,m="not available"},
 		 						{s=44,c=0,x=0,y=4,f=nil,m="not available"},
@@ -141,7 +140,7 @@ end
 
 function gamestart()
 	mhelp = "'x' to select a tool, 'z' to use it"
-	money = 200
+	money = 100
 	mhist = {}
 	fruit = {}
 	timeleft = 7200
@@ -419,7 +418,7 @@ end
 
 
 
-fruitsell = {1,10,1,45,3,100}
+fruitsell = {1,40,1,300,1,50}
 function addoutput(x,y)
 	tiles[x][y] = {
 		t="output",
@@ -427,6 +426,7 @@ function addoutput(x,y)
 		age=0,
 		get= function(self,f)
 								money += fruitsell[f.s-48]
+								if (money < 0) money = 32767
 								for i=1,fruitsell[f.s-48] do
 									add(ptclist,
 									newptc(x*8-5+rnd(3),y*8+4+rnd(3),9,1,cos(rnd())/1.5,-2.5+rnd(1),0,0.2,7+rnd(2)))
@@ -520,7 +520,7 @@ function u_tile(i,j)
 	if t.t == "oven" then
 		if t.age < 0 then
 			t.state = (t.state+1)%4
-			t.age = 5
+			t.age = 6
 			if (t.state == 0) addfruit(i,j-1,51)
 		end
 		t.s = 64+t.state 
