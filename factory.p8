@@ -3,6 +3,7 @@ version 8
 __lua__
 -- pico-factory
 -- a ld37 game by caranha
+-- version count = 5
 -------------------------
 -- v1.3.1 -- fixed double click bug, added bignum
 -- v1.3 -- added overwrite
@@ -24,6 +25,67 @@ dx={-1,1,0,0}
 dy={0,0,-1,1}
 ptclist={}
 version = "v1.3.1"
+
+----------------------------
+-- bignum
+b_string = function(high,low)
+	if (high == 0) return low
+	local z = (low > 999 and "") or (low > 99 and "0") or (low > 9 and "00") or "000"
+ return high..z..low	
+end
+
+b_add = function (ah,al,bh,bl)
+	local low = al + bl
+	local high = ah + bh
+	if low > 9999 then
+	 low -= 10000
+		high += 1
+	end
+	high = min(high, 10000)
+	return high,low
+end	
+
+-- minimizes to zero
+b_sub = function (ah,al,bh,bl)
+	local low = al - bl
+	local high = ah - bh
+	if low < 0 then
+		low += 10000
+		high -= 1
+	end
+
+	if (high < 0 or low < 0) return 0,0
+	return high,low
+end
+
+b_gt = function (ah,al,bh,bl)
+	return (bh < ah or (bh == ah and bl <= al))
+end
+
+b_shift = function (ah,al)
+	local high = min(ah*10 + flr(al/1000), 10000)
+	local low = ((high == 10000 and 0) or (al%1000)*10)
+	return high, low
+end
+
+b_div = function (ah,al,bh,bl)
+	local base = 1
+	local res = 0
+	local high = ah
+	local low = al
+	while base >= 0.001 do
+		count = 0
+		while b_gt(high,low,bh,bl) do
+			count += 1
+			high,low = b_sub(high,low,bh,bl)
+		end
+		high,low = b_shift(high,low)
+		res += count * base
+		base /= 10
+	end
+	return res
+end
+
 
 --------------------------
 function new_window(x0,y0,x1,y1,c1,c2,c3,mage)
@@ -80,40 +142,50 @@ function _init()
 	}
 
 	menu_items = {
-									{s=42,c=0,x=0,y=0,f=destroy,m="destroy a tile! "},
-  							{s=41,c=100,x=0,y=1,f=addoutput,m="sells products "},
-		 						{s=1,c=2,x=1,y=0,f=addbelt,m="conveyor belt ã "},
-		 						{s=5,c=2,x=1,y=1,f=addbelt,m="conveyor belt ë "},
-		 						{s=17,c=2,x=1,y=2,f=addbelt,m="conveyor belt î "},
-		 						{s=21,c=2,x=1,y=3,f=addbelt,m="conveyor belt É "},
-		 						{s=57,c=6,x=1,y=4,f=addsplit,m="splits the input 3-way "},
-		 						{s=9,c=10,x=2,y=0,f=addtree,m="tree: 1 apple/3s "},
-		 						{s=25,c=150,x=3,y=0,f=addprocessor,m="mixer: 4 apples = juice "},
-		 						{s=64,c=100,x=2,y=1,f=addoven,m="bakery: 3 bread/2 s "},
-		 						{s=80,c=500,x=3,y=1,f=addass,m="bread + juice = $$$ "},
-		 						{s=68,c=50,x=4,y=0,f=addchicken,m="a bit random "},
-		 						{s=84,c=300,x=4,y=1,f=addtoaster,m="egg + bread = delicious "},
-		 						{s=44,c=0,x=0,y=2,f=nil,m="not available"},
-		 						{s=44,c=0,x=0,y=3,f=nil,m="not available"},
-		 						{s=44,c=0,x=0,y=4,f=nil,m="not available"},
-		 						{s=44,c=0,x=2,y=2,f=nil,m="not available"},		 								 								 						
-		 						{s=44,c=0,x=2,y=3,f=nil,m="not available"},
-		 						{s=44,c=0,x=2,y=4,f=nil,m="not available"},
-		 						{s=44,c=0,x=3,y=2,f=nil,m="not available"},
-		 						{s=44,c=0,x=3,y=3,f=nil,m="not available"},
-		 						{s=44,c=0,x=3,y=4,f=nil,m="not available"},
-		 						{s=44,c=0,x=4,y=2,f=nil,m="not available"},
-		 						{s=44,c=0,x=4,y=3,f=nil,m="not available"},
-		 						{s=44,c=0,x=4,y=4,f=nil,m="not available"},
+									{s=42,c={0,0},x=0,y=0,f=destroy,m="destroy a tile! "},
+  							{s=41,c={0,100},x=0,y=1,f=addoutput,m="sells products "},
+		 						{s=1,c={0,2},x=1,y=0,f=addbelt,m="conveyor belt ã "},
+		 						{s=5,c={0,2},x=1,y=1,f=addbelt,m="conveyor belt ë "},
+		 						{s=17,c={0,2},x=1,y=2,f=addbelt,m="conveyor belt î "},
+		 						{s=21,c={0,2},x=1,y=3,f=addbelt,m="conveyor belt É "},
+		 						{s=57,c={0,6},x=1,y=4,f=addsplit,m="splits the input 3-way "},
+		 						{s=9,c={0,10},x=2,y=0,f=addtree,m="tree: 1 apple/3s "},
+		 						{s=25,c={0,150},x=3,y=0,f=addprocessor,m="mixer: 4 apples = juice "},
+		 						{s=64,c={0,100},x=2,y=1,f=addoven,m="bakery: 3 bread/2 s "},
+		 						{s=80,c={0,500},x=3,y=1,f=addass,m="bread + juice = $$$ "},
+		 						{s=68,c={0,50},x=4,y=0,f=addchicken,m="a bit random "},
+		 						{s=84,c={0,300},x=4,y=1,f=addtoaster,m="egg + bread = delicious "},
+		 						{s=44,c={0,0},x=0,y=2,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=0,y=3,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=0,y=4,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=2,y=2,f=nil,m="not available"},		 								 								 						
+		 						{s=44,c={0,0},x=2,y=3,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=2,y=4,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=3,y=2,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=3,y=3,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=3,y=4,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=4,y=2,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=4,y=3,f=nil,m="not available"},
+		 						{s=44,c={0,0},x=4,y=4,f=nil,m="not available"},
 		 					}
 
 	
 	cartdata("caranha_ld37")
 	screenshake = 0
 	beltc = 0
-	money = 0
+	money = {high = 0, low = 0}
 
-	highscore = max(dget(0),1000)
+	hs_high = dget(1)
+	hs_low = dget(0)
+
+	if dget(3) < 5 then
+		hs_high = 0
+		hs_low = 1000
+		dset(0,1000)
+		dset(1,0)
+		dset(3,5) 
+	end
+
 	_update = update_menu
 	_draw = draw_menu
 	menustart()
@@ -126,7 +198,6 @@ function menustart()
 	mcounter = 0
 	_update = update_menu
 	_draw = draw_menu
-
 
 	cleanroom()
 	addtree(5,8)
@@ -141,11 +212,12 @@ end
 
 function gamestart()
 	mhelp = "'x' to select a tool, 'z' to use it"
-	money = 100
+	money = {high = 0, low = 100}
 	mhist = {}
+	mmax_high, mmax_low = 0,0
 	fruit = {}
 	timeleft = 7200
-
+ 
 	curx,cury = 8,7
 	menux,menuy = 0,0
 	place_mode = true
@@ -153,7 +225,7 @@ function gamestart()
 	menuselect = 1
 	overwrite = false
 	
-	menu_items[2].c=100
+	menu_items[2].c={0,100}
 end
 
 function scorestart()
@@ -250,7 +322,7 @@ function updatecursor()
 	if btnp(4) and winlist[4].age == 0 then
 		if (place_mode) then
 			sm = menu_items[select]
-			if (money < sm.c) then
+			if b_gt(sm.c[1],sm.c[2],money.high, money.low) then
 				sfx(2)
 				return
 			end
@@ -268,7 +340,7 @@ function updatecursor()
 						return
 					end
 				end
-				money -= sm.c
+				money.high,money.low = b_sub(money.high,money.low,sm.c[1],sm.c[2])
 				sm.f(curx,cury,select-2)
 				sfx(3)
 			end
@@ -303,7 +375,7 @@ function destroy(x,y)
 			newptc(x*8-4,y*8+5,5+rnd(2),rnd(2)+0.2,cos(0.13+i/4)/2*rnd(2),sin(0.13+i/4)/2*rnd(2),0,0,10))
 	end
 
-	if (t == "output") menu_items[2].c = flr(menu_items[2].c/2+0.5)
+	if (t == "output") menu_items[2].c[2] = menu_items[2].c[2]/2
 end
 
 beltd = {1,5,17,21}
@@ -419,23 +491,28 @@ end
 
 
 
-fruitsell = {1,40,1,300,1,50}
+fruitsell = {{0,1},
+													{0,40},
+													{0,1},
+													{0,300},
+													{0,1},
+													{0,50}}
 function addoutput(x,y)
 	tiles[x][y] = {
 		t="output",
 		s=41,
 		age=0,
 		get= function(self,f)
-								money += fruitsell[f.s-48]
-								if (money < 0) money = 32767
-								for i=1,fruitsell[f.s-48] do
+								local fs = fruitsell[f.s-48]
+								money.high,money.low = b_add(money.high,money.low,fs[1],fs[2])
+								for i=1,fs[2] do
 									add(ptclist,
 									newptc(x*8-5+rnd(3),y*8+4+rnd(3),9,1,cos(rnd())/1.5,-2.5+rnd(1),0,0.2,7+rnd(2)))
 								end
 								sfx(4)
 							end
 	}
-	menu_items[2].c = flr(menu_items[2].c*2+0.5)
+	menu_items[2].c[2] = min(menu_items[2].c[2]*2,6400)
 end
 
 function addfruit(x,y,s)
@@ -580,7 +657,12 @@ function update_game()
 
 	if (scount == 0 and rnd() < 0.3) mhelp = messages[flr(rnd(#messages))+1]
 
-	if (timeleft%60==0 and timeleft>=0) add(mhist,money)
+	if (timeleft%60==0 and timeleft>=0) then 
+		add(mhist,{money.high,money.low})
+		if b_gt(money.high, money.low, mmax_high, mmax_low) then
+			mmax_high, mmax_low = money.high, money.low
+		end
+	end	
 	timeleft -= 1
 	if (timeleft < 0) then 
 		winlist[4].open = false
@@ -647,13 +729,15 @@ function update_end()
 	if scorecounter > 30 and scorecounter < 30+#mhist then
 		sfx(4)
 	end
-	if scorecounter == 33+#mhist and money > highscore then
+	if scorecounter == 33+#mhist and b_gt(money.high,money.low,hs_high,hs_low) then
 		sfx(6)
 	end
 	
 	if scorecounter > 60 and btn() > 0 then
-	 highscore = max(highscore,money)
-	 dset(0,highscore)
+		if b_gt(money.high,money.low,hs_high,hs_low) then
+	 	dset(0,money.low)
+	 	dset(1,money.high)
+	 end
 	 winlist[3].open = false
 		menustart()
 	end
@@ -669,11 +753,11 @@ function draw_bottom()
 
 	local menushow = (place_mode and select or menuselect)
 	local mitem = menu_items[menushow]
-	local ttext = mitem.m.."(c:"..mitem.c..")"
+	local ttext = mitem.m.."(c:"..b_string(mitem.c[1],mitem.c[2])..")"
 
 	print(ttext,64-#ttext*2,2,7)
 	print(mhelp,128 - scount,115,7)		
-	print("$$ = "..money,2,121,10)
+	print("$$ = "..b_string(money.high,money.low),2,121,10)
 
 	local tc = 10
 	if (timeleft < 900) tc -= 2*(flr((timeleft%10)/5))
@@ -690,21 +774,25 @@ end
 function drawscore()
 	foreach(winlist,w_draw)
 
-	local mscore = max(money,highscore)*1.1
-	local scorey = function(s) return 90-((s/mscore)*53) end	
+	if b_gt(hs_high,hs_low,mmax_high,mmax_low) then
+		mmax_high, mmax_low = hs_high, hs_low
+	end
+
+	local scorey = function(h,l) return 90-((b_div(h,l,mmax_high,mmax_low))*53) end	
+
 	if (scorecounter > 30) then
-		local smsg = "final score "..(money)
+		local smsg = "final score "..b_string(money.high,money.low)
 		print(smsg,64-#smsg*2,26,3)
-		line(14,scorey(highscore),114,scorey(highscore),12)
-		line(14,scorey(0),114,scorey(0),7)
-		line(14,scorey(0),14,scorey(mscore),7)
+		line(14,scorey(hs_high,hs_low),114,scorey(hs_high,hs_low),12)
+		line(14,scorey(0,0),114,scorey(0,0),7)
+		line(14,scorey(0,0),14,scorey(mmax_high,mmax_low),7)
 		
 		local gstep = 100/(#mhist-1)
 		for i=1,(min(#mhist,scorecounter-30)-1) do
-			line(14+(i-1)*gstep,scorey(mhist[i]),14+(i)*gstep,scorey(mhist[i+1]),10)
+			line(14+(i-1)*gstep,scorey(mhist[i][1],mhist[i][2]),14+(i)*gstep,scorey(mhist[i+1][1],mhist[i+1][2]),10)
 		end
 		if (scorecounter > 32+#mhist) then
-			if money > highscore then
+			if b_gt(money.high, money.low, hs_high,hs_low) then
 				print ("ç new highscore ç",30,94+sin(scorecounter/60),3+sin(scorecounter/60)*8)
 			else
 				print ("try to beat the highscore!",14,95,3)
@@ -754,10 +842,10 @@ function draw_menu()
 	print("a ld37 game by @caranha",19,46,1)
 	print("a ld37 game by @caranha",18,45,6)
 	print("build your factory in 4:00",12,81,1)
-	print("try to earn more than $"..(highscore),12,89,1)
+	print("earn more than $"..b_string(hs_high,hs_low),12,89,1)
 	print("press any key to start",12,97,1)
 	print("build your factory in 4:00",11,80,6)
-	print("try to earn more than $"..(highscore),11,88,6)
+	print("earn more than $"..b_string(hs_high,hs_low),11,88,6)
 	print("press any key to start",11,96,6)
 	
 	if (mcounter < -42)	print("ready!",52,120)
