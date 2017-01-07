@@ -738,6 +738,8 @@ function update_end()
 		if b_gt(money.high,money.low,hs_high,hs_low) then
 	 	dset(0,money.low)
 	 	dset(1,money.high)
+	 	hs_low = money.low
+	 	hs_high = money.high
 	 end
 	 winlist[3].open = false
 		menustart()
