@@ -5,7 +5,7 @@ __lua__
 -- a ld37 game by caranha
 -- version count = 5
 -------------------------
--- v1.3.1 -- fixed double click bug, added bignum
+-- v1.3.1 -- fixed double click bug, added bignum, buffed sandwich
 -- v1.3 -- added overwrite
         -- fruits now explode on rejected machines
         -- rebalanced costs
@@ -17,9 +17,10 @@ __lua__
 -------------------------
 -- todo:
 -- 1. music
--- 2. new game modes
+-- 2. rewrite graph as a log graph
 -- 3. tile variation and improvement
--- 4. more tiles and more rebalancing
+-- 4. new game modes
+-- 5. more tiles and more rebalancing
 
 dx={-1,1,0,0}
 dy={0,0,-1,1}
@@ -154,7 +155,7 @@ function _init()
 		 						{s=64,c={0,100},x=2,y=1,f=addoven,m="bakery: 3 bread/2 s "},
 		 						{s=80,c={0,500},x=3,y=1,f=addass,m="bread + juice = $$$ "},
 		 						{s=68,c={0,50},x=4,y=0,f=addchicken,m="a bit random "},
-		 						{s=84,c={0,300},x=4,y=1,f=addtoaster,m="egg + bread = delicious "},
+		 						{s=84,c={0,2500},x=4,y=1,f=addtoaster,m="egg + bread = $$$$$ "},
 		 						{s=44,c={0,0},x=0,y=2,f=nil,m="not available"},
 		 						{s=44,c={0,0},x=0,y=3,f=nil,m="not available"},
 		 						{s=44,c={0,0},x=0,y=4,f=nil,m="not available"},
@@ -496,7 +497,7 @@ fruitsell = {{0,1},
 													{0,1},
 													{0,300},
 													{0,1},
-													{0,50}}
+													{0,2000}}
 function addoutput(x,y)
 	tiles[x][y] = {
 		t="output",
@@ -505,7 +506,7 @@ function addoutput(x,y)
 		get= function(self,f)
 								local fs = fruitsell[f.s-48]
 								money.high,money.low = b_add(money.high,money.low,fs[1],fs[2])
-								for i=1,fs[2] do
+								for i=1,min(fs[2],200) do
 									add(ptclist,
 									newptc(x*8-5+rnd(3),y*8+4+rnd(3),9,1,cos(rnd())/1.5,-2.5+rnd(1),0,0.2,7+rnd(2)))
 								end
