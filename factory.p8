@@ -4,6 +4,7 @@ __lua__
 -- pico-factory
 -- a ld37 game by caranha
 -------------------------
+-- v1.3.1 -- fixed double click bug, added bignum
 -- v1.3 -- added overwrite
         -- fruits now explode on rejected machines
         -- rebalanced costs
@@ -22,7 +23,7 @@ __lua__
 dx={-1,1,0,0}
 dy={0,0,-1,1}
 ptclist={}
-version = "v1.3"
+version = "v1.3.1"
 
 --------------------------
 function new_window(x0,y0,x1,y1,c1,c2,c3,mage)
@@ -239,14 +240,14 @@ function updatecursor()
 		end
 	end
 
-	if btnp(5) then 
+	if btnp(5) and winlist[4].age == 0 then 
 		overwrite = false
 		place_mode = not place_mode
 		w_toggle(winlist[4])
 		sfx(1)
 	end
 
-	if btnp(4) then
+	if btnp(4) and winlist[4].age == 0 then
 		if (place_mode) then
 			sm = menu_items[select]
 			if (money < sm.c) then
