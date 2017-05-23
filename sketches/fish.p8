@@ -7,17 +7,19 @@ c = {x = 0, y = 0}
 fish = {}
 bbl = {}
 splsh = {}
+wline = {5,5,5,5,5,5,
+									5,5,5,5,5,5}
 
-add(fish, {x = 0, y = 0,
+add(fish, {x = 0, y = 30,
 											spd = 3, d = 0,
 											ow = 0, id = 0})
-add(fish, {x = 0, y = 0,
+add(fish, {x = 0, y = 30,
 											spd = 3, d = 0,
 											ow = 0, id = 1})
-add(fish, {x = 0, y = 0,
+add(fish, {x = 0, y = 30,
 											spd = 3, d = 0,
 											ow = 0, id = 2})
-add(fish, {x = 0, y = 0,
+add(fish, {x = 0, y = 30,
 											spd = 3, d = 0,
 											ow = 0, id = 3})
 
@@ -46,14 +48,14 @@ function update_fish(f)
 		add(bbl,{x = f.x, y = f.y, s = 1})
 	end
 
-	if f.y < -50 then
+	if f.y < 0 then
 		f.ow += 1
 	else
 		if (f.ow > 0) then
-			add(splsh,{x = f.x,y = -50,
+			add(splsh,{x = f.x,y = 0,
 														a = 0, spd = 1.5,
 														s = 1})
-			add(splsh,{x = f.x,y = -50,
+			add(splsh,{x = f.x,y = 0,
 														a = 0, spd = -1.5,
 														s = 1})
 			sfx(0)
@@ -62,7 +64,7 @@ function update_fish(f)
 	end
 		
 	f.y += 0.1 * (f.ow) 	
-	if (f.y > 49) f.y = 49
+	if (f.y > 99) f.y = 99
 	
 	if f.id > 0 and abs(f.x - fish[1].x) + abs(f.y - fish[1].y) > 70
 	then
@@ -85,7 +87,7 @@ function _update()
 	end
 	for b in all(bbl) do
 		update_bbl(b)
-		if (b.s > 4 or b.y < -50) del(bbl,b)
+		if (b.s > 4 or b.y < 0) del(bbl,b)
 	end
 	for s in all(splsh) do
 		update_splsh(s)
@@ -94,8 +96,8 @@ function _update()
  	
 	c.x = (c.x + fish[1].x)/2
 	c.y = (c.y + fish[1].y)/2	
-	c.y = max(c.y, -40)
-	c.y = min(c.y, 20)
+	c.y = max(c.y, -10)
+	c.y = min(c.y, 70)
 end
 
 function _draw()
@@ -103,9 +105,14 @@ function _draw()
 	camera(0,0)
 	camera(c.x-64, c.y-64)
 	
-	rectfill(c.x-150,-50,c.x+150,50,12)
-	rectfill(c.x-150,50,c.x+200,52,9)
-	rectfill(c.x-150,53,c.x+200,200,4)	
+	rectfill(c.x-150,2,c.x+150,100,12)
+	rectfill(c.x-150,100,c.x+200,102,9)
+	rectfill(c.x-150,103,c.x+200,150,4)	
+
+	for w = -70,70 do
+		line(c.x + w, 2, c.x + w, 1 - sin((c.x+w)/30)*1.5, 12)
+	end
+
 
 	for b in all(bbl) do
 		circ(b.x,b.y,b.s,1)
@@ -113,7 +120,6 @@ function _draw()
 	for s in all(splsh) do
 		circfill(s.x,s.y,s.s,12)
 	end
-
 	for f in all(fish) do	
 		spr(1 + flr(t%2) + 
 						2*flr((f.d*4)%4),
