@@ -8,11 +8,11 @@ fish = {}
 bbl = {}
 splsh = {}
 plant = {}
+stars = {}
 
-add(plant, {x = 0, y = 101, 
-												part = {{0,true},
-																				{1,false},
-																				{1,true}}}
+for i = 1,50 do
+	add(stars,{rnd()*128,rnd()*70,true})
+end
 
 function draw_plant(p)
 	for i = 1,#(p.part) do
@@ -20,6 +20,25 @@ function draw_plant(p)
 						p.x, p.y - 8*(i-1),
 						1, 1, p.part[i][2]) 
 	end
+end
+
+function new_plant(x)
+	p = {}
+	p.x = x
+	p.y = 93 + rnd()*3
+	part = {}
+	size = flr(rnd()*3)+2
+	for i = 1,size do
+		add(part,{flr(rnd()*4),
+												(rnd() > 0.5)})
+	end
+	p.part = part
+	add(plant,p)
+end
+
+
+for i = 1,20 do
+	new_plant(rnd()*300 - 150)
 end
 
 add(fish, {x = 0, y = 30,
@@ -110,16 +129,34 @@ function _update()
 	c.y = (c.y + fish[1].y)/2	
 	c.y = max(c.y, -10)
 	c.y = min(c.y, 70)
+	
+	for p in all(plant) do
+		if (abs(c.x - p.x) > 170) del(plant,p)
+	end
+	if #plant < 30 then
+		for i = 1,(30 - #plant) do
+		x = rnd()*50
+		d = rnd() - 0.5
+		new_plant(c.x + sgn(d)*(64 + x))
+		end
+	end
 end
 
 function _draw()
 	cls()
-	camera(0,0)
+	camera(0,(c.y-64)/20)
+	for s in all(stars) do
+		circfill(s[1],s[2],0,
+											(s[3] and 6 or 13))
+	 if (rnd() > 0.99) s[3] = not(s[3])
+	end
+	circfill(20,10,15,7)
+	
 	camera(c.x-64, c.y-64)
 	
 	rectfill(c.x-150,2,c.x+150,100,12)
-	rectfill(c.x-150,100,c.x+200,102,9)
-	rectfill(c.x-150,103,c.x+200,150,4)	
+	rectfill(c.x-150,100,c.x+200,103,9)
+	rectfill(c.x-150,104,c.x+200,150,4)	
 
 	for w = -70,70 do
 		line(c.x + w, 2, c.x + w, 1 - sin((c.x+w)/30)*1.5, 12)
