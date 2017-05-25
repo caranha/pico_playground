@@ -1,6 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+shake = 0
 t = 0
 c = {x = 0, y = 0}
 
@@ -90,6 +91,7 @@ function update_fish(f)
 														a = 0, spd = -1.5,
 														s = 1})
 			sfx(0)
+			if (f.id == 0) shake += f.ow
 		end
 		f.ow = 0
 	end
@@ -112,6 +114,7 @@ end
 function _update()
 	t += 0.2
 	if (t > 10000) t = 0
+	if (shake > 0) shake -= 1
 	
 	for f in all(fish) do
 		update_fish(f)
@@ -144,7 +147,9 @@ end
 
 function _draw()
 	cls()
-	camera(0,(c.y-64)/20)
+	sshake = min(shake,12)
+	camera(0 + rnd(sshake),
+								(c.y-64)/20 + rnd(sshake))
 	for s in all(stars) do
 		circfill(s[1],s[2],0,
 											(s[3] and 6 or 13))
@@ -152,7 +157,8 @@ function _draw()
 	end
 	circfill(20,10,15,7)
 	
-	camera(c.x-64, c.y-64)
+	camera(c.x-64 + rnd(sshake), 
+								c.y-64 + rnd(sshake))
 	
 	rectfill(c.x-150,2,c.x+150,100,12)
 	rectfill(c.x-150,100,c.x+200,103,9)
