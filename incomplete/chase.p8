@@ -1,9 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+tgt = {x = 100, y = 64, d = 0, s = 100}
+shp = {x = 10, y = 80, d = 0, s = 120}   
 
 stars = {}
-tgt = {x = 100, y = 64, d = 0, s = 60}
 walls = {}
 w_blt = {x = 0, y = 0, a = 0, c = 0, s = 1}
 
@@ -22,13 +23,36 @@ end
 function _update()
 	t += 1/30
 	update_tgt()
+	update_shp()
 	update_star()
+end
+
+function update_shp()
+
+	local col = false
+	for i in all(walls) do
+	 	if (abs(i.x - shp.x) < 8 and abs(i.y - shp.y) < 16) col = true
+	end
+	
+	if col then
+		shp.d = (shp.y > tgt.y and 0.25 or -0.25) 
+	else
+	 local td = atan2(tgt.x - shp.x, tgt.y - shp.y)
+	 td = (td > 0.5 and td - 1 or td)
+	 shp.d = td
+ end
+
+	local maxs = max(40, tgt.x - shp.x)
+	shp.s += sgn(maxs-shp.s)*2
+
+	shp.x += cos(shp.d) * shp.s / 30
+	shp.y += sin(shp.d) * shp.s / 30
 end
 
 function update_tgt()
 	tgt.x += cos(tgt.d)*(tgt.s/30)
 	tgt.y += sin(tgt.d)*(tgt.s/30)
-	tgt.d = cos(t/6)*0.1
+	tgt.d = cos(t/6)*0.08
 	
 	if w_blt.a < 0 then
 		if (rnd() > 0.98)	w_blt = {x = tgt.x, y = tgt.y, a = .4, s = rnd(100)-50, c = rnd(8)+8} 
@@ -58,6 +82,7 @@ function _draw()
 		rectfill(w.x-4,w.y-12,w.x+3,w.y+11,w.c)
 	end
 	draw_tgt()
+	draw_shp()
 end 
 
 function draw_tgt()
@@ -66,6 +91,13 @@ function draw_tgt()
 	
 	if (w_blt.a > 0) circ(w_blt.x,w_blt.y,2,w_blt.c)	
 end
+
+function draw_shp()
+	rect(shp.x-4,shp.y-4,shp.x+3,shp.y+3,8)
+	line(shp.x,shp.y,shp.x+cos(shp.d+.4)*3,shp.y+sin(shp.d+.4)*3,3)
+	line(shp.x,shp.y,shp.x+cos(shp.d-.4)*3,shp.y+sin(shp.d-.4)*3,3)	
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
