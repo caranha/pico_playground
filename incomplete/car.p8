@@ -13,7 +13,7 @@ cart[1] = {x = 50, y = 50,
            
 for i = 1,10 do
 	add(cart,
-	    {x = rnd(200)+30, y = rnd(200)+30,
+	    {x = rnd(120)+30, y = rnd(120)+30,
 	     s = 0, ds = 0.1, ms = 0.5+rnd(2),
 	     d = rnd(), dd = 0.01*sgn(rnd()-0.5), 
 	     sp = 1, sc = rnd(16)})
@@ -22,15 +22,19 @@ end
 
 function npc_ctl(c)
 	if (c.im) return
-	c.x += cos(c.d)*c.s
-	c.y += sin(c.d)*c.s
  c.d -= c.dd
  c.s = min(c.ms,c.s+c.ds)
+	c.x += cos(c.d)*c.s
+	c.y += sin(c.d)*c.s
+	local t = false
+	for i=1,#cart do
+		if cart[i] != c and abs(cart[i].x - c.x) < 5 and abs(cart[i].y - c.y) < 5 then
+			c.s = -c.s
+		end
+	end
 end
 
 function p_ctl(c)
-	c.x += cos(c.d)*c.s
-	c.y += sin(c.d)*c.s
 	
 	if (btn(1)) c.d -= c.dd
 	if (btn(0)) c.d += c.dd
@@ -48,6 +52,16 @@ function p_ctl(c)
 	 sfx(0)
 	end
 	bcd = max(0, bcd -1)
+	
+	for i=1,#cart do
+			if cart[i] != c and abs(cart[i].x - c.x) < 5 and abs(cart[i].y - c.y) < 5 then
+			c.s = -c.s
+		end
+	end
+	
+	c.x += cos(c.d)*c.s
+	c.y += sin(c.d)*c.s
+
 end
 
 function update_blt()
