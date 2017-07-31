@@ -5,11 +5,8 @@ __lua__
 -- by caranha and conanfelipe
 
 shake = 0
-dmgflr = {}
-bouder = {}
-axe    = {}
-column = {}
-
+fireball = {}
+dragon = {}
 game_end = {}
 
 e_p  = 100
@@ -20,9 +17,6 @@ e_gm = 100
 t_fade = 0
 t = 0
 cx = 0
-
-p = {}
-e = {}
 
 ----- particle system ------
 
@@ -101,6 +95,11 @@ function title_init()
 	t_fade = 20
 	p_dc = 0
 	e_p = 100
+	
+	column = {}		
+	for i = 1,5 do
+		add(column,{x=50*i,y=110,h=40})
+	end
 end
 
 function cyclops_init()
@@ -112,10 +111,10 @@ function cyclops_init()
 	music(2)
 	e_g  = 100
 	
-	column = {}	
-	for i = 1,5 do
-		add(column,{x=50*i,y=110,h=40})
-	end
+	bouder = {}
+	dmgflr = {}
+
+
 	p = { x = 64, y = 105, w=0, r = true, dc = 0, inv = 0} 
 	e = { x = 120, y = 60, t = 30, s = 0, r = true,
 						dx = -1, dy = -1, sp = 80, w=0, dc = 0
@@ -140,6 +139,18 @@ function skeleton_init()
 	end
 end
 
+function dragon_init()
+	t = 0
+	t_fade = 17
+	cx = 128
+	
+	music(2)
+	e_g  = 100
+	
+	p = { x = 64, y = 105, w=0, r = true, dc = 0, inv = 0} 
+	dragon = { dc = 0, s = 0, x = 128, y = -40}
+	fireball = {}
+end
 
 --------- update  ----------
 
@@ -153,6 +164,99 @@ function damage_player(dam)
 	end
 	for k = 1,dam/2 do add_ptc(p.x+8,p.y+8,3,3,0,1,0,1,1,c,10,1,0,-0.06) end
 end
+
+-- fixme: add damage column function
+
+function dragon_updt() -- dragon update
+
+	for f in all(fireball) do
+		if f.y < 110 then
+			f.x += cos(f.d)*4
+			f.y += sin(f.d)*4
+	 else
+	 	f.a += 1
+	 	if (f.a == 1) sfx(19)
+	 	for c in all(column) do
+				if abs((f.x+8) - (c.x+8)) < 24 then
+					c.h -= 20
+					if c.h < 1 then
+						del(column,c)
+						for k = 1,50 do add_ptc(c.x+8,90,3,30,0,1,0,1,1,7,10,1,0,-0.06) end
+					end
+				end
+			end
+			if abs((f.x+8) - (p.x + 8)) < 24 and abs((f.y+8) - (p.y + 8)) < 24 then
+				damage_player(3)
+			end
+	 	if (f.a > 8) del(fireball,f)
+		end
+	end
+	
+	
+	if (e_g < 1) then
+		dragon.dc += 1
+		return 
+	end
+
+	if dragon.s == 0 then
+		dragon.y = min(40,t-40)
+		if t == 150 then dragon.s = 1 t = 0 return end
+	elseif dragon.s == 1 then
+		dragon.x = 128+cos((t+30)/120)*80
+		dragon.y = 40+sin(t/45)*20
+		if t%30 == 0 and rnd() < 0.3 then
+			dragon.s = flr(rnd(2))+2
+			dragon.ot = t
+			t = 0
+		end
+	elseif dragon.s == 2 then
+		if t < 40 then dragon.y -= 2
+		elseif t == 40 then 
+			dragon.x = 20 + flr(rnd(2))*220 dragon.y = -20 dragon.angry = true dragon.d = atan2(p.x - dragon.x, p.y - dragon.y)
+			sfx(4)
+		elseif dragon.y < 140 then 
+			dragon.x += cos(dragon.d)*5 dragon.y += sin(dragon.d)*5
+			if (dragon.y < 105 and dragon.y > 80) then	
+				for c in all(column) do
+					if abs((dragon.x+8) - (c.x+8)) < 32 then
+						c.h -= 30
+						if c.h < 1 then
+							del(column,c)
+							for k = 1,50 do add_ptc(c.x+8,90,3,30,0,1,0,1,1,7,10,1,0,-0.06) end
+						end
+					end
+				end
+			end
+			if abs((dragon.x+8) - (p.x + 8)) < 32 and abs((dragon.y+8) - (p.y + 8)) < 16 then
+				damage_player(4)
+			end
+		else
+			dragon.x = 128
+			dragon.y = -40	
+			dragon.s = 0
+			t = 0			
+			dragon.angry = false
+			e_g -= 5
+		end
+	else -- dragon.s = 3
+		
+		if (t%50 == 35) dragon.angry = true
+		if t%50 == 49 then add(fireball,{x=dragon.x,y=dragon.y,d=atan2(flr(t/50)*30+p.x-30-dragon.x,110-dragon.y),a=0}) e_g -= 5 sfx(4) end
+		if (t%50 == 5) dragon.angry = false
+		if t > 160 then dragon.s = 1 t = dragon.ot end
+	end
+	
+	-- update each stage
+	-- stage 0, comes from above and moves to center of screen
+	-- stage 1, moves around following a sin wave
+	-- randomly moves to stage 2 or 3 every second
+	-- stage 2, stops and throws two fireballs, back to 1
+	-- stage 3, flies up and does one diagonal flyby fast
+	-- back to 1
+	
+	
+end
+
 
 function axe_updt()
 	for a in all(axe) do
@@ -177,7 +281,6 @@ function axe_updt()
 		elseif abs(a.x - (p.x + 8)) < 7 and abs(a.y - (p.y + 8)) < 10 then
 			damage_player(5)
 			del(axe,a)
-			for k = 1,10 do add_ptc(a.x,a.y,3,3,0,1,0,1,1,8,10,1,0,-0.06) end
 			sfx(1)
 		end		
 		
@@ -347,12 +450,40 @@ function title_update()
 	
 	if t_fade > 20 then
 		cyclops_init()
-		--skeleton_init()
+		--dragon_init()
 		update = stage1_update
-		--update = stage2_update
+		--update = stage3_update
 		draw = d_game
 		d_monster = c_draw
-		--d_monster = sk_draw
+		--d_monster = dragon_draw
+	end
+end
+
+function stage3_update()
+	t += 1
+	if (dragon.dc > 30 or p.dc > 30) then
+		t_fade += 1
+		music(-1)
+	else 
+		t_fade = max(0,t_fade-1)
+	end
+	
+	if (dragon.dc == 1) sfx(12)
+	if (p.dc == 1) sfx(11)
+	
+	shake = max(0, shake-1)
+
+	foreach(ptc,update_ptc)
+	dragon_updt()	
+	p_ctl()
+
+	if t_fade > 20 then
+		if (dragon.dc > 30) game_end[4] = true
+		if (p.dc > 30) game_end[1] = true
+		
+		title_init()
+		update = title_update
+		draw = d_title
 	end
 end
 
@@ -379,12 +510,9 @@ function stage2_update()
 		if (p.dc > 30) game_end[1] = true
 		
 		if p.dc == 0 then 
-		 -- won this stage
-		 -- replace with stage 3
-			title_init()
-			update = title_update
-			--d_monster = sk_draw
-			draw = d_title
+		 dragon_init()
+			update = stage3_update
+			d_monster = dragon_draw
 		else
 			title_init()
 			update = title_update
@@ -442,6 +570,35 @@ function column_draw(c)
 	spr(8+e,c.x,c.y-40,2,1)
 end
 
+boom = {204,206,236,238}
+
+function dragon_draw()
+
+	for f in all(fireball) do
+		if f.a == 0 then
+		 spr(228+2*flr(t/2)%4,f.x,f.y,2,2)
+		else
+			local sb = flr((f.a-1)/2)+1
+			spr(boom[sb],f.x-8,f.y-8,2,2)
+			spr(boom[sb],f.x+8,f.y-8,2,2,true)
+			spr(boom[sb],f.x-8,f.y+8,2,2,false,true)
+			spr(boom[sb],f.x+8,f.y+8,2,2,true,true)
+		end
+	end
+
+	if (dragon.dc > 0) fade(dragon.dc/1.5)
+	 local face = 192
+	 if (t%60 < 5 or dragon.s == 3) face = 224 
+	 if (dragon.angry) face = 226
+		spr(face,dragon.x,dragon.y+sin(t/30)*2,2,2)
+
+		spr(194+2*(flr(t/5)%5),dragon.x-16,dragon.y+sin(t/30)*2,2,2)
+		spr(194+2*(flr(t/5)%5),dragon.x+16,dragon.y+sin(t/30)*2,2,2,true)
+	if (dragon.dc > 0) fade(t_fade)
+	
+	-- draw fireball
+end
+
 function sk_draw()
 	if (sk.dc > 0) fade(sk.dc/1.5)
 	for i in all(sk) do
@@ -492,7 +649,7 @@ function d_title()
 		if (game_end[1]) print("you died.",46,70,7)	
 		if (game_end[2]) print("you defeated the cyclops.",16,80,7)
 		if (game_end[3]) print("you defeated the dead.",22,90,7)
-		if (game_end[4]) print("you defeated the ???.",24,100,7)
+		if (game_end[4]) print("you defeated the dragon.",18,100,7)
 	end
 end
 
@@ -538,11 +695,16 @@ function d_game()
 	spr(15,0,103,1,3)
 	
 	camera(0,0) -- gui
+
+	print("‡", 2, 122, 8)	
+	print("‡", 120, 122, 8)
+	rectfill(10,124,118,125,8)	
+	rectfill(10,124,10+max(0,108*(e_p/e_pm)),125,12)
 	
-	rectfill(10,126,118,127,8)	
-	rectfill(10,126,10+max(0,108*(e_p/e_pm)),127,12)
-	rectfill(10,2,118,3,8)
-	rectfill(10,2,10+max(0,108*(e_g/e_gm)),3,10)
+	print("‚", 2, 2, 2)	
+	print("‚", 120, 2, 2)
+	rectfill(10,4,118,5,8)
+	rectfill(10,4,10+max(0,108*(e_g/e_gm)),5,10)
 end
 
 function _draw()
@@ -864,7 +1026,7 @@ __sfx__
 011000000e5000e5010e5010e5010e5010e5010e5010e5050d5010d5010d5010d5010d5010d5010d5010d5050e5000e5010e5010e5010e5010e5010e5010e5050e5430e5430e5010e5430e5010e5410e5410e545
 011000000e5400e5410e5410e5410e5410e5410e5410e5450d5410d5410d5410d5410d5410d5410d5410d5450e5400e5410e5410e5410e5410e5410e5410e5450d5410d5410d5410d5410d5410d5410d5410d545
 01100000033400f305033550335504355043550d3010f6030f3001230006355063550535505355013010f6030e300103000335503355043550435510301116030e30010300063550635505355053550334003340
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010400000a6201363527670276701865517645126350f6360962603616016160161001610016000260014600106000f6000d60009600086000060000600006000060000600006000060000600006000060000600
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
