@@ -1,0 +1,111 @@
+pico-8 cartridge // http://www.pico-8.com
+version 16
+__lua__
+
+ass_jump = {0,0,0,0,0,0,0,0,0}
+ass = {false, false, false,
+							false, false, false,
+							false, false, false}
+ass_focus = 1
+sat = {}
+
+function _init()
+	reset_sat(12)
+end
+
+function _update()
+	for i = 1,9 do
+		ass_jump[i] = max(0,ass_jump[i]-1)
+	end
+
+	if (btnp(⬅️)) ass_focus = mid(1,9,ass_focus-1)
+	if (btnp(➡️)) ass_focus = mid(1,9,ass_focus+1)
+	if (btnp(⬆️)) ass_focus = mid(1,9,ass_focus-3)
+	if (btnp(⬇️)) ass_focus = mid(1,9,ass_focus+3)
+	
+	if (btnp(❎)) ass[ass_focus] = not ass[ass_focus] ass_jump[ass_focus] = 10
+end
+
+function _draw()
+	cls()
+	draw_sat(7,16)
+	draw_assignment(10,100)
+end
+-->8
+-- display
+
+function draw_sat(x,y)
+	for i = 1,#sat do
+		xo = x + ((i-1)%3)*40
+		yo = y + 5 + flr((i-1)/3)*20 + sin((t()+(i-1)/3)/3)*2
+		draw_boat(xo,yo,sat[i])
+	end
+end
+
+function draw_boat(x,y,row)
+	local boattrue = false
+	for i=1,3 do
+		draw_rower(x+(i-1)*11,y,row[i])
+		boattrue = boattrue or 
+													(row[i].neg != ass[row[i].no])
+	end
+
+	if (boattrue) pal(4,3)	
+	spr(16,x,y+8,4,1)
+	pal()
+end
+
+function draw_rower(x,yo,unit)
+	local y = yo +(ass_jump[unit.no] > 0 and 0 or 1)
+	circfill(x+4,y-2,2,9)
+	pset(x+3,y-2,4)
+	pset(x+5,y-2,4)
+	spr(1+(unit.neg and 1 or 0),
+					x,y)
+	print(unit.no,x+3,y+2,7)
+	spr(3+(ass[unit.no] != unit.neg and 1 or 0),x+8,y-3)
+end
+
+function draw_assignment(x,y)
+	for i = 1,9 do
+		local xo = x+((i-1)%3)*40
+		local yo = y+(flr((i-1)/3))*10  
+		print(tostr(i)..":"..tostr(ass[i]),
+								xo, yo,
+								(ass[i] and 11 or 8)) 
+		if ass_focus == i then
+			rect(xo-2,yo-2,xo+28,yo+6)
+		end
+	end
+end
+
+-->8
+-- logic
+
+function reset_sat(n)
+	sat = {}
+	for i = 1,n do
+		add(sat,create_boat())
+	end
+end
+
+function create_boat()
+	local ret = {}
+	for i = 1,3 do
+		local b = {no = flr(rnd(9)+1), neg = (rnd() > 0.5)}
+		add(ret,b)
+	end
+	return ret
+end
+__gfx__
+0000000000bbbbb000888880088000000bb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000bbbbbbb08888888088000000bb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007007000bbbbbbb0888888805000000050000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000770000bbbbbbb0888888809000000090000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000770000bbbbbbb0888888809000000090000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007007000bbbbbbb0888888890000000900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000bbbbbbb0888888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000bbbbbbb0888888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+44444444444444444444444444444444000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00444444444444444444444444444400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000444444444444444444444400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
