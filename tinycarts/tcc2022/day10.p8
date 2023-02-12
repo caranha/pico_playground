@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 38
+version 41
 __lua__
 e=128f=64r=rnd
 🐱=circfill
@@ -14,10 +14,10 @@ x=r(e)
 y=r(e)
 c=i<f and r(3) or pget(x-1,y+1)+1pset(x,y,min(c,7))
 end
-for i=0,#★ do
+for i=1,#★ do
 x=e+10*i-⧗*30y=f+sin(x/20)*5-x/2
 for j=0,4 do
-?"\^w"..★[i],x,y+j,7-j
+print("\^w"..★[i],x,y+j,7-j)
 end
 end
 else
